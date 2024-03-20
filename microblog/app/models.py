@@ -62,6 +62,12 @@ class User(UserMixin,db.Model):
     def is_following(self, user):
         return self.following.filter(
             followers.c.followed_id == user.id).count() > 0
+    
+    def followers_count(self):
+        return self.followers.count()
+    
+    def following_count(self):
+        return self.following.count()
 
 @login.user_loader
 def load_user(id):

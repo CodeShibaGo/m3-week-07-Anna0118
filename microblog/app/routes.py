@@ -84,6 +84,7 @@ def user(username):
     ]
     return render_template('user.html', user=user, posts=posts)
 
+#編輯個人檔案
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
@@ -103,3 +104,41 @@ def edit_profile():
     return render_template('edit_profile.html', title='Edit Profile',
                            username=current_user.username,
                            about_me=current_user.about_me)
+
+#追蹤
+@app.route('/follow/<username>', methods=['POST'])
+@login_required
+def follow(username):
+    if request.method == 'POST':
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            flash(f'User {username} not found.')
+            return redirect(url_for('index'))
+        if user == current_user:
+            flash('You cannot follow yourself!')
+            return redirect(url_for('user', username=username))
+        current_user.follow(user)
+        db.session.commit()
+        flash(f'You are following {username}!')
+        return redirect(url_for('user', username=username))
+    else:
+        return redirect(url_for('index'))
+    
+#退追蹤
+@app.route('/unfollow/<username>', methods=['POST'])
+@login_required
+def unfollow(username):
+    if request.method == 'POST':
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            flash(f'User {username} not found.')
+            return redirect(url_for('index'))
+        if user == current_user:
+            flash('You cannot unfollow yourself!')
+            return redirect(url_for('user', username=username))
+        current_user.unfollow(user)
+        db.session.commit()
+        flash(f'You are not following {username}.')
+        return redirect(url_for('user', username=username))
+    else:
+        return redirect(url_for('index'))
