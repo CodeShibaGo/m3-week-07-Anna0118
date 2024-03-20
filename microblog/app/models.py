@@ -1,6 +1,9 @@
-from app import db
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+from hashlib import md5
+from datetime import datetime, timezone
+from app import db, login
 
 # 使用者可以「追蹤」其他使用者是「多對多」關係：一個使用者可以追蹤多個使用者，同時一個使用者也可以被多個使用者追蹤
 # 並不需要去特別的定義一個 Model 來做中繼，而是透過Table的方法，來設罝MetaData
@@ -11,7 +14,8 @@ followers = db.Table('followers',
                                db.ForeignKey('user.id'))
                      )
 
-class User(db.Model):
+
+class User(UserMixin,db.Model):
     # __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -24,6 +28,13 @@ class User(db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    def avatar(self, size):
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
+    
+    # 一對多關係
+    # `author`用於建立 `User` 和 `Post` 之間的邏輯聯繫，並不對應資料庫中的實體欄位 (靠 `Post` 表中的 `user_id` 外鍵)
+    posts = db.relationship('Post', backref='author', lazy='dynamic')
 
     following = relationship(
         'User', 
@@ -51,3 +62,17 @@ class User(db.Model):
     def is_following(self, user):
         return self.following.filter(
             followers.c.followed_id == user.id).count() > 0
+
+@login.user_loader
+def load_user(id):
+    return db.session.get(User, int(id))
+
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.String(140))
+    timestamp = db.Column(db.DateTime, index=True,
+                          default=lambda: datetime.now(timezone.utc))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    def __repr__(self):
+        return '<Post {}>'.format(self.body)

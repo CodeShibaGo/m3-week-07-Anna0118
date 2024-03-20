@@ -1,12 +1,7 @@
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<ul class=flashes>
-  {% for message in messages %}
-  <li>{{ message }}</li>
-  {% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Log in</h1>
 <form method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
   <div>
@@ -21,3 +16,5 @@
     <input type="submit" value="Log in">
   </div>
 </form>
+<p>New User? <a href="{{ url_for('register') }}">Click to Register!</a></p>
+{% endblock %}

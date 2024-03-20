@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Edit Profile</h1>
+<form action="" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p>
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username" size="32" value="{{ username }}"><br>
+        {% if username_errors %}
+        {% for error in username_errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+        {% endif %}
+    </p>
+    <p>
+        <label for="about_me">About me:</label><br>
+        <textarea id="about_me" name="about_me" cols="50" rows="4">{{ about_me }}</textarea><br>
+        {% if about_me_errors %}
+        {% for error in about_me_errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+        {% endif %}
+    </p>
+    <p><input type="submit" value="Submit"></p>
+</form>
+{% endblock %}
