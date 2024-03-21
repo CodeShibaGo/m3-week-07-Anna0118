@@ -1,10 +1,11 @@
-from app import app, db
+from app import app, db,mail
 from flask import Flask, request, render_template, redirect, url_for, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.models import User, Post
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlsplit
 from datetime import datetime, timezone
+from flask_mail import Message
 
 
 @app.before_request
@@ -92,16 +93,6 @@ def logout():
     return redirect(url_for('register'))
 
 
-# 測試db是否連線成功
-@app.route('/test_db')
-def test_db():
-    try:
-        user_count = User.query.count()
-        return f"資料庫連線成功，用戶數量為：{user_count}"
-    except Exception as e:
-        return f"資料庫連線失敗，錯問訊息：{e}"
-
-
 # 個人頁面
 @app.route('/user/<username>')
 @login_required
@@ -174,3 +165,23 @@ def unfollow(username):
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))
+
+
+# 測試db是否連線成功
+@app.route('/test_db')
+def test_db():
+    try:
+        user_count = User.query.count()
+        return f"資料庫連線成功，用戶數量為：{user_count}"
+    except Exception as e:
+        return f"資料庫連線失敗，錯問訊息：{e}"
+
+
+# 發送信件
+@app.route('/message')
+def send_message():
+    msg = Message('Hello', sender='bellachu351@gmail.com',
+                  recipients=['bellachu351@gmail.com'])
+    msg.body = "Hello Flask message sent from Flask-Mail"
+    mail.send(msg)
+    return 'You Send Mail by Flask-Mail Success!!'
