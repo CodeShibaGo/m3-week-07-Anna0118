@@ -10,6 +10,7 @@ from flask_login import LoginManager
 load_dotenv()
 
 app = Flask(__name__)
+app.debug = True
 app.config.from_object(Config)
 csrf = CSRFProtect(app)
 db = SQLAlchemy(app)

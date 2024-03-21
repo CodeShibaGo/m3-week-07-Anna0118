@@ -22,6 +22,7 @@ class User(UserMixin,db.Model):
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(256), nullable=True)
     about_me = db.Column(db.String(140))
+    last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -68,6 +69,21 @@ class User(UserMixin,db.Model):
     
     def following_count(self):
         return self.following.count()
+    
+    def following_posts(self):
+        followed_posts = Post.query.join(
+            followers, 
+            # 先把Post裡的user_id與followd_id 產生連結
+            (followers.c.followed_id == Post.user_id)).filter(
+                # 利用filter，再過濾出這貼文是使用者在追蹤的人的貼文
+            followers.c.follower_id == self.id)
+        # 當前使用者自己的貼文
+        own_posts = Post.query.filter_by(user_id=self.id)
+        # 貼文時間降冪蜜排序
+        all_posts = followed_posts.union(
+            own_posts).order_by(Post.timestamp.desc())
+        return all_posts
+
 
 @login.user_loader
 def load_user(id):

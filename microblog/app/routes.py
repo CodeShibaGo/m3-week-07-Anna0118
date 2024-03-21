@@ -1,21 +1,44 @@
-from app import app,db
+from app import app, db
 from flask import Flask, request, render_template, redirect, url_for, flash
 from werkzeug.security import check_password_hash, generate_password_hash
-from app.models import User
+from app.models import User, Post
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlsplit
-
-# @app.route('/')
-# def home():
-#     return redirect(url_for('login'))
+from datetime import datetime, timezone
 
 
-@app.route('/')
-def home():
-    return 'Hello world'
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc)
+        #  不需要add，因為數據已存在，current_user會自動去追蹤
+        db.session.commit()
 
+
+# 首頁
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+@login_required
+def index():
+    print(current_user.is_authenticated)
+    if request.method == 'POST':
+        post = request.form.get('post')
+        if len(post.strip()) == 0:
+            flash('Post content cannot be empty.')
+            return redirect(url_for('index'))
+        posts = Post(body=post, author=current_user)
+        db.session.add(posts)
+        db.session.commit()
+        flash('Your post is now live!')
+        return redirect(url_for('index'))
+    posts = current_user.following_posts().all()
+    return render_template("index.html", title='Home Page', posts=posts)
+
+# 註冊
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -28,9 +51,9 @@ def register():
 
         flash('Registration successful')
         return redirect(url_for('login'))
-    return render_template('register.html',title='Register')
+    return render_template('register.html', title='Register')
 
-
+# 登入
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -51,11 +74,12 @@ def login():
             return redirect(url_for('login'))
     return render_template('login.html',  title='Log In')
 
-
+# 登出
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('register'))
+
 
 # 測試db是否連線成功
 @app.route('/test_db')
@@ -67,24 +91,16 @@ def test_db():
         return f"資料庫連線失敗，錯問訊息：{e}"
 
 
-# 登入成功後，可以看到index頁面
-@app.route('/index')
-@login_required
-def index():
-    return render_template('index.html', title='Home')
-
 # 個人頁面
 @app.route('/user/<username>')
 @login_required
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
-    posts = [
-        {'author': user, 'body': 'Test post #1'},
-        {'author': user, 'body': 'Test post #2'}
-    ]
+    posts = Post.query.filter_by(user_id=user.id).all()
     return render_template('user.html', user=user, posts=posts)
 
-#編輯個人檔案
+
+# 編輯個人檔案
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
@@ -96,6 +112,11 @@ def edit_profile():
         if not username:
             flash('Username is required.')
             return redirect(url_for('edit_profile'))
+        # 不可與資料庫內的username重複
+        user = User.query.filter_by(username=username).first()
+        if user is not None and user.username != current_user.username:
+            flash('This username is already in use. Please use a different username.')
+            return redirect(url_for('edit_profile'))
         current_user.username = username
         current_user.about_me = about_me
         db.session.commit()
@@ -105,7 +126,7 @@ def edit_profile():
                            username=current_user.username,
                            about_me=current_user.about_me)
 
-#追蹤
+# 追蹤
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
 def follow(username):
@@ -123,8 +144,8 @@ def follow(username):
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))
-    
-#退追蹤
+
+# 退追蹤
 @app.route('/unfollow/<username>', methods=['POST'])
 @login_required
 def unfollow(username):
