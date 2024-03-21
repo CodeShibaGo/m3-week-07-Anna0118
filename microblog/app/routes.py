@@ -110,6 +110,30 @@ def logout():
     return redirect(url_for('login'))
 
 
+#忘記密碼(不需寄驗證信版)
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.form.get('email') 
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            flash('No account found with that email.')
+            return redirect(url_for('reset_password'))
+        
+        password_new = request.form.get('password_new')
+        password_check = request.form.get('password_check')
+
+        if password_new != password_check:
+            flash('Passwords do not match.')
+            return redirect(url_for('reset_password'))
+
+        user.password_hash = generate_password_hash(password_new)
+        db.session.commit()
+
+        flash('Your password has been reset.')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', title='Reset Password')
+
 # 個人頁面
 @app.route('/user/<username>')
 @login_required
