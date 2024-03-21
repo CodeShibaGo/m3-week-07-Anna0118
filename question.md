@@ -72,3 +72,13 @@
     在終端機下 `flask run` ，從錯誤訊息判斷
 
 ## 學會 Python 基本的套件管理
+
+產生一個 requirements.txt，記錄專案使用到的套件
+
+- 將目前安裝好的套件寫入 requirments.txt
+
+  ``` pip freeze > requirements.txt ```
+
+- 需要安裝使用時
+
+  ``` pip install -r requirements.txt ```
