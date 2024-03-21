@@ -46,6 +46,22 @@ def index():
                            posts=posts.items, next_url=next_url,
                            prev_url=prev_url)
 
+# 全部貼文
+@app.route('/explore')
+@login_required
+def explore():
+    page = request.args.get('page', 1, type=int)
+    query = Post.query.order_by(Post.timestamp.desc())
+    posts = db.paginate(query, page=page,
+                        per_page=app.config['POSTS_PER_PAGE'], error_out=False)
+    next_url = url_for('explore', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('explore', page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('index.html', title='Explore', posts=posts.items,
+                           next_url=next_url, prev_url=prev_url)
+
+
 # 註冊
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -86,11 +102,12 @@ def login():
             return redirect(url_for('login'))
     return render_template('login.html',  title='Log In')
 
+
 # 登出
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('register'))
+    return redirect(url_for('login'))
 
 
 # 個人頁面
@@ -165,7 +182,7 @@ def unfollow(username):
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))
-
+    
 
 # 測試db是否連線成功
 @app.route('/test_db')
