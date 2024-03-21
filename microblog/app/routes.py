@@ -31,8 +31,19 @@ def index():
         db.session.commit()
         flash('Your post is now live!')
         return redirect(url_for('index'))
-    posts = current_user.following_posts().all()
-    return render_template("index.html", title='Home Page', posts=posts)
+    # posts = current_user.following_posts().all()
+    # return render_template("index.html", title='Home Page', posts=posts)
+    page = request.args.get('page', 1, type=int) #defult當前頁碼為1
+    # 撈出有追蹤的用戶的貼文後，進行分頁
+    posts = current_user.following_posts().paginate(
+        page=page, per_page=app.config['POSTS_PER_PAGE'], error_out=False)
+    next_url = url_for('index', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('index', page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('index.html', title='Home',
+                           posts=posts.items, next_url=next_url,
+                           prev_url=prev_url)
 
 # 註冊
 @app.route('/register', methods=['GET', 'POST'])
