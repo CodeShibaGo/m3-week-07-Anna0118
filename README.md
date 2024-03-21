@@ -1,8 +1,7 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/Gbi5cF2w)
+
 ## Readme 
-
-
-以下步驟將指導您如何將此專案在本地運行。
+參照以下步驟將此專案在本地端運行。
 
 - 確保您已安裝 Python 3 和 pip
 
@@ -16,7 +15,7 @@
    git clone [repository url]
    ```
 
-2. **創建虛擬環境**
+2. **建立虛擬環境**
 
    在專案目錄中建立一個虛擬環境：
 
@@ -24,7 +23,7 @@
    # 安裝 virtualenv 如果還未安裝
    pip3 install virtualenv
 
-   # 創建虛擬環境
+   # 建立虛擬環境
    virtualenv venv
 
    # 啟用虛擬環境
